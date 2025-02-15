@@ -13,10 +13,11 @@
 # Must use Java version 8.
 JAVA_VERSION_STRING=`java -version 2>&1 | head -1`
 JAVA_RELEASE_NUMBER=`echo $JAVA_VERSION_STRING | sed 's/^.*1\.\(.\).*/\1/'`
-if [[ "$JAVA_RELEASE_NUMBER" != "8" ]]; then
- echo Must use Java version 8
- exit
-fi
+## NOTE: Java is backwards-compatible; the version number should just be >= 8
+#if [[ "$JAVA_RELEASE_NUMBER" != "8" ]]; then
+# echo Must use Java version 8
+# exit
+#fi
 
 # Import helper subroutines and variables
 if [ ! -f test.include ]; then
