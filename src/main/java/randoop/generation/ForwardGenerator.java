@@ -94,7 +94,6 @@ public class ForwardGenerator extends AbstractGenerator {
    * @param sideEffectFreeMethods side-effect-free methods
    * @param limits limits for generation, after which the generator will stop
    * @param componentManager stores previously-generated sequences
-   * @param listenerManager manages notifications for listeners
    * @param classesUnderTest set of classes under test
    */
   public ForwardGenerator(
@@ -102,15 +101,13 @@ public class ForwardGenerator extends AbstractGenerator {
       Set<TypedOperation> sideEffectFreeMethods,
       GenInputsAbstract.Limits limits,
       ComponentManager componentManager,
-      RandoopListenerManager listenerManager,
       Set<ClassOrInterfaceType> classesUnderTest) {
     this(
         operations,
         sideEffectFreeMethods,
         limits,
         componentManager,
-        /*stopper=*/ null,
-        listenerManager,
+        /* stopper= */ null,
         classesUnderTest);
   }
 
@@ -122,7 +119,6 @@ public class ForwardGenerator extends AbstractGenerator {
    * @param limits limits for generation, after which the generator will stop
    * @param componentManager container for sequences that are used to generate new sequences
    * @param stopper determines when the test generation process should conclude. Can be null.
-   * @param listenerManager manages notifications for listeners
    * @param classesUnderTest the classes that are under test
    */
   public ForwardGenerator(
@@ -131,7 +127,6 @@ public class ForwardGenerator extends AbstractGenerator {
       GenInputsAbstract.Limits limits,
       ComponentManager componentManager,
       IStopper stopper,
-      RandoopListenerManager listenerManager,
       Set<ClassOrInterfaceType> classesUnderTest) {
     this(
         operations,
@@ -139,9 +134,8 @@ public class ForwardGenerator extends AbstractGenerator {
         limits,
         componentManager,
         stopper,
-        listenerManager,
-        -1,
-        null,
+        /* numClasses= */ -1,
+        /* literalTermFrequencies= */ null,
         classesUnderTest);
   }
 
@@ -153,7 +147,6 @@ public class ForwardGenerator extends AbstractGenerator {
    * @param limits limits for generation, after which the generator will stop
    * @param componentManager container for sequences that are used to generate new sequences
    * @param stopper determines when the test generation process should conclude. Can be null.
-   * @param listenerManager TODO: apparently unused according to {@link RandoopListenerManager}
    * @param numClasses number of classes under test, expected to be non-negative if GRT Constant
    *     Mining is enabled
    * @param literalTermFrequencies map from literal to its frequency observed in all classes under
@@ -166,11 +159,10 @@ public class ForwardGenerator extends AbstractGenerator {
       GenInputsAbstract.Limits limits,
       ComponentManager componentManager,
       IStopper stopper,
-      RandoopListenerManager listenerManager,
       int numClasses,
       Map<Sequence, Integer> literalTermFrequencies,
       Set<ClassOrInterfaceType> classesUnderTest) {
-    super(operations, limits, componentManager, stopper, listenerManager);
+    super(operations, limits, componentManager, stopper);
 
     this.sideEffectFreeMethods = sideEffectFreeMethods;
     this.instantiator = componentManager.getTypeInstantiator();
@@ -189,6 +181,10 @@ public class ForwardGenerator extends AbstractGenerator {
     }
 
     switch (GenInputsAbstract.input_selection) {
+      case ORIENTEERING:
+        inputSequenceSelector =
+            new OrienteeringSelection(componentManager.getAllGeneratedSequences());
+        break;
       case SMALL_TESTS:
         inputSequenceSelector = new SmallTestsSequenceSelection();
         break;
@@ -241,9 +237,9 @@ public class ForwardGenerator extends AbstractGenerator {
     final int nanoPerMilli = 1000000;
     final long nanoPerOne = 1000000000L;
     // 1 second, in nanoseconds
-    final long timeWarningLimit = 1 * nanoPerOne;
+    final long timeWarningLimitNanos = 1 * nanoPerOne;
 
-    long startTime = System.nanoTime();
+    long startTimeNanos = System.nanoTime();
 
     if (componentManager.numGeneratedSequences() % GenInputsAbstract.clear == 0) {
       componentManager.clearGeneratedSequences();
@@ -256,19 +252,19 @@ public class ForwardGenerator extends AbstractGenerator {
     ExecutableSequence eSeq = createNewUniqueSequence();
 
     if (eSeq == null) {
-      long gentime = System.nanoTime() - startTime;
-      if (gentime > timeWarningLimit) {
+      long gentimeNanos = System.nanoTime() - startTimeNanos;
+      if (gentimeNanos > timeWarningLimitNanos) {
         System.out.printf(
-            "Long generation time %d msec for null sequence.%n", gentime / nanoPerMilli);
+            "Long generation time %d msec for null sequence.%n", gentimeNanos / nanoPerMilli);
       }
       return null;
     }
 
     if (GenInputsAbstract.dontexecute) {
       this.componentManager.addGeneratedSequence(eSeq.sequence);
-      long gentime = System.nanoTime() - startTime;
-      if (gentime > timeWarningLimit) {
-        System.out.printf("Long generation time %d msec for%n", gentime / nanoPerMilli);
+      long gentimeNanos = System.nanoTime() - startTimeNanos;
+      if (gentimeNanos > timeWarningLimitNanos) {
+        System.out.printf("Long generation time %d msec for%n", gentimeNanos / nanoPerMilli);
         System.out.println(eSeq.sequence);
       }
       return null;
@@ -276,14 +272,14 @@ public class ForwardGenerator extends AbstractGenerator {
 
     setCurrentSequence(eSeq.sequence);
 
-    long gentime1 = System.nanoTime() - startTime;
+    long gentimeNanos1 = System.nanoTime() - startTimeNanos;
 
     // Useful for debugging non-terminating sequences.
     // System.out.printf("step() is considering: %n%s%n%n", eSeq.sequence);
 
     eSeq.execute(executionVisitor, checkGenerator);
 
-    startTime = System.nanoTime(); // reset start time.
+    startTimeNanos = System.nanoTime(); // reset start time.
 
     inputSequenceSelector.createdExecutableSequence(eSeq);
 
@@ -293,17 +289,19 @@ public class ForwardGenerator extends AbstractGenerator {
       componentManager.addGeneratedSequence(eSeq.sequence);
     }
 
-    long gentime2 = System.nanoTime() - startTime;
+    long gentimeNanos2 = System.nanoTime() - startTimeNanos;
 
-    eSeq.gentime = gentime1 + gentime2;
+    eSeq.gentimeNanos = gentimeNanos1 + gentimeNanos2;
 
-    if (eSeq.gentime > timeWarningLimit) {
+    if (eSeq.gentimeNanos > timeWarningLimitNanos) {
       System.out.printf(
           "Long generation time %d msec (= %d + %d) for%n",
-          eSeq.gentime / nanoPerMilli, gentime1 / nanoPerMilli, gentime2 / nanoPerMilli);
+          eSeq.gentimeNanos / nanoPerMilli,
+          gentimeNanos1 / nanoPerMilli,
+          gentimeNanos2 / nanoPerMilli);
       System.out.println(eSeq.sequence);
     }
-    if (eSeq.exectime > 10 * timeWarningLimit) {
+    if (eSeq.exectime > 10 * timeWarningLimitNanos) {
       System.out.printf("Long execution time %d sec for%n", eSeq.exectime / nanoPerOne);
       System.out.println(eSeq.sequence);
     }
@@ -312,7 +310,7 @@ public class ForwardGenerator extends AbstractGenerator {
   }
 
   @Override
-  public LinkedHashSet<Sequence> getAllSequences() {
+  public Set<Sequence> getAllSequences() {
     return this.allSequences;
   }
 
@@ -763,6 +761,7 @@ public class ForwardGenerator extends AbstractGenerator {
       // The user may have requested that we use null values as inputs with some given frequency.
       // If this is the case, then use null instead with some probability.
       if (!isReceiver
+          && !GenInputsAbstract.forbid_null
           && GenInputsAbstract.null_ratio != 0
           && Randomness.weightedCoinFlip(GenInputsAbstract.null_ratio)) {
         Log.logPrintf("Using null as input.%n");

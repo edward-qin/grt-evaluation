@@ -69,7 +69,7 @@ public abstract class AbstractGenerator {
   /** When the generator started (millisecond-based system timestamp). */
   private long startTime = -1;
 
-  /** Sequences that are used in other sequences (and are thus redundant) */
+  /** Sequences that are used in other sequences (and are thus redundant). */
   protected Set<Sequence> subsumed_sequences = new LinkedHashSet<>();
 
   /**
@@ -99,13 +99,6 @@ public abstract class AbstractGenerator {
 
   /** Customizable stopping criterion in addition to time and sequence limits. */
   private IStopper stopper;
-
-  /**
-   * Manages notifications for listeners.
-   *
-   * @see randoop.generation.IEventListener
-   */
-  public RandoopListenerManager listenerMgr;
 
   /**
    * Updates the progress display message printed to the console. Null if
@@ -153,15 +146,12 @@ public abstract class AbstractGenerator {
    *     generation. Can be null, in which case the generator's component manager is initialized as
    *     {@code new ComponentManager()}.
    * @param stopper optional, additional stopping criterion for the generator. Can be null.
-   * @param listenerManager manager that stores and calls any listeners to use during generation.
-   *     Can be null.
    */
   protected AbstractGenerator(
       List<TypedOperation> operations,
       GenInputsAbstract.Limits limits,
       ComponentManager componentManager,
-      IStopper stopper,
-      RandoopListenerManager listenerManager) {
+      IStopper stopper) {
     assert operations != null;
 
     this.limits = limits;
@@ -176,7 +166,6 @@ public abstract class AbstractGenerator {
     }
 
     this.stopper = stopper;
-    this.listenerMgr = listenerManager;
     operationHistory = new DefaultOperationHistoryLogger();
     outRegressionSeqs = new ArrayList<>();
     outErrorSeqs = new ArrayList<>();
@@ -241,8 +230,7 @@ public abstract class AbstractGenerator {
         || (numGeneratedSequences() >= limits.generated_limit)
         || (numOutputSequences() >= limits.output_limit)
         || (GenInputsAbstract.stop_on_error_test && numErrorSequences() > 0)
-        || (stopper != null && stopper.shouldStop())
-        || (listenerMgr != null && listenerMgr.shouldStopGeneration());
+        || (stopper != null && stopper.shouldStop());
   }
 
   /**
@@ -300,21 +288,11 @@ public abstract class AbstractGenerator {
     startTime = System.currentTimeMillis();
 
     if (GenInputsAbstract.progressdisplay) {
-      progressDisplay = new ProgressDisplay(this, listenerMgr, ProgressDisplay.Mode.MULTILINE);
+      progressDisplay = new ProgressDisplay(this, ProgressDisplay.Mode.MULTILINE);
       progressDisplay.start();
     }
 
-    // Notify listeners that exploration is starting.
-    if (listenerMgr != null) {
-      listenerMgr.explorationStart();
-    }
-
     while (!shouldStop()) {
-
-      // Notify listeners we are about to perform a generation step.
-      if (listenerMgr != null) {
-        listenerMgr.generationStepPre();
-      }
 
       num_steps++;
 
@@ -322,11 +300,6 @@ public abstract class AbstractGenerator {
 
       if (dump_sequences) {
         Log.logPrintf("%nseq before run:%n%s%n", eSeq);
-      }
-
-      // Notify listeners we just completed generation step.
-      if (listenerMgr != null) {
-        listenerMgr.generationStepPost(eSeq);
       }
 
       if (GenInputsAbstract.progressdisplay
@@ -396,11 +369,6 @@ public abstract class AbstractGenerator {
       }
       System.out.println("Explorer = " + this);
     }
-
-    // Notify listeners that exploration is ending.
-    if (listenerMgr != null) {
-      listenerMgr.explorationEnd();
-    }
   }
 
   /**
@@ -408,7 +376,7 @@ public abstract class AbstractGenerator {
    *
    * @return all generated sequences
    */
-  public abstract LinkedHashSet<Sequence> getAllSequences();
+  public abstract Set<Sequence> getAllSequences();
 
   /**
    * Returns the generated regression test sequences for output. Filters out subsequences.

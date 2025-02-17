@@ -258,7 +258,7 @@ public class Bloodhound implements TypedOperationSelector {
    */
   private double updateWeight(TypedOperation operation) {
     // Remove type arguments, because Jacoco does not include type arguments when naming a method.
-    String methodName = operation.getName().replaceAll("<.*>\\.", ".");
+    String methodName = operation.getName().replaceAll("<.*>\\.", ".").replace('$', '.');
 
     // Corresponds to uncovRatio(m) in the GRT paper.
     Double uncovRatio = coverageTracker.getBranchCoverageForMethod(methodName);
@@ -281,11 +281,14 @@ public class Bloodhound implements TypedOperationSelector {
       boolean isAbstractMethod = false;
       boolean isSyntheticMethod = false;
       boolean isFromAbstractClass = false;
+      boolean isClassUnderTest = true;
       if (callableOperation instanceof MethodCall) {
         Method method = ((MethodCall) callableOperation).getMethod();
         isAbstractMethod = Modifier.isAbstract(method.getModifiers());
         isSyntheticMethod = method.isSynthetic();
         isFromAbstractClass = Modifier.isAbstract(method.getDeclaringClass().getModifiers());
+        isClassUnderTest =
+            coverageTracker.classesUnderTest.contains(method.getDeclaringClass().getName());
       }
 
       boolean isGetterMethod = callableOperation instanceof FieldGet;
@@ -299,6 +302,7 @@ public class Bloodhound implements TypedOperationSelector {
               || isEnumConstant
               || isSyntheticMethod
               || isFromAbstractClass
+              || !isClassUnderTest
               || operationName.equals("java.lang.Object.<init>")
               || operationName.equals("java.lang.Object.getClass");
       if (!isExpectedToHaveNoCoverage) {

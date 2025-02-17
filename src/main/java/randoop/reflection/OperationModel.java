@@ -59,6 +59,7 @@ import randoop.types.ClassOrInterfaceType;
 import randoop.types.Type;
 import randoop.util.Log;
 import randoop.util.MultiMap;
+import randoop.util.Util;
 
 /**
  * {@code OperationModel} represents the information context from which tests are generated. The
@@ -181,10 +182,13 @@ public class OperationModel {
 
     model.omitMethodsPredicate = new OmitMethodsPredicate(omitMethods);
 
+    // Add methods from the classes.
     model.addOperationsFromClasses(accessibility, reflectionPredicate, operationSpecifications);
+    // Add methods from the --methodlist command-line argument.
     model.operations.addAll(
         model.getOperationsFromFile(
             GenInputsAbstract.methodlist, accessibility, reflectionPredicate));
+    // Add the constructor "Object()".
     model.addObjectConstructor();
 
     return model;
@@ -267,26 +271,27 @@ public class OperationModel {
    * Includes literals at different levels indicated by {@link ClassLiteralsMode}.
    *
    * @param compMgr the component manager
-   * @param literalsFile the list of literals file names
+   * @param literalsFileList the list of literals file names
    * @param literalsLevel the level of literals to add
    */
   public void addClassLiterals(
-      ComponentManager compMgr, List<String> literalsFile, ClassLiteralsMode literalsLevel) {
+      ComponentManager compMgr, List<String> literalsFileList, ClassLiteralsMode literalsLevel) {
 
     // Add a (1-element) sequence corresponding to each literal to the component
     // manager.
 
-    for (String filename : literalsFile) {
-      MultiMap<ClassOrInterfaceType, Sequence> literalmap;
-      if (filename.equals("CLASSES")) {
-        literalmap = classLiteralMap;
+    for (String literalsFile : literalsFileList) {
+      MultiMap<ClassOrInterfaceType, Sequence> literalMap;
+      if (literalsFile.equals("CLASSES")) {
+        literalMap = classLiteralMap;
       } else {
-        literalmap = LiteralFileReader.parse(filename);
+        literalMap = LiteralFileReader.parse(literalsFile);
       }
 
-      for (ClassOrInterfaceType type : literalmap.keySet()) {
+      // `literalMap` does not have the `entrySet()` method.
+      for (ClassOrInterfaceType type : literalMap.keySet()) {
         Package pkg = (literalsLevel == ClassLiteralsMode.PACKAGE ? type.getPackage() : null);
-        for (Sequence seq : literalmap.getValues(type)) {
+        for (Sequence seq : literalMap.getValues(type)) {
           // If GRT Constant Mining is enabled, add the sequence to the collection of class literals
           // and the collection of all sequences.
           if (GenInputsAbstract.input_selection
@@ -347,7 +352,9 @@ public class OperationModel {
       try (EntryReader er = new EntryReader(file, "(//|#).*$", null)) {
         return OperationModel.readOperations(er, ignoreParseError);
       } catch (IOException e) {
-        String message = String.format("Error while reading file %s: %s%n", file, e.getMessage());
+        String message =
+            String.format(
+                "Error while reading file %s: %s%n", Util.pathAndAbsolute(file), e.getMessage());
         throw new RandoopUsageError(message, e);
       }
     }
@@ -420,7 +427,10 @@ public class OperationModel {
     try (EntryReader er = new EntryReader(is, filename, "^#.*", null)) {
       return OperationModel.readOperations(er, ignoreParseError);
     } catch (IOException e) {
-      String message = String.format("Error while reading file %s: %s%n", filename, e.getMessage());
+      String message =
+          String.format(
+              "Error while reading file %s: %s%n",
+              Util.filenameAndAbsolute(filename), e.getMessage());
       throw new RandoopUsageError(message, e);
     }
   }
@@ -646,8 +656,8 @@ public class OperationModel {
             succeeded++;
           } catch (Throwable e) {
             System.out.printf(
-                "Cannot get methods for %s specified via --testclass or --classlist due to"
-                    + " exception:%n%s%n",
+                "Cannot get methods for %s specified via "
+                    + "--testclass or --classlist due to exception:%n%s%n",
                 c.getName(), UtilPlume.stackTraceToString(e));
           }
         }
@@ -710,6 +720,7 @@ public class OperationModel {
     Iterator<ClassOrInterfaceType> itor = classTypes.iterator();
     while (itor.hasNext()) {
       ClassOrInterfaceType classType = itor.next();
+      Log.logPrintf("addOperationsFromClasses: classType=%s%n", classType);
       try {
         Collection<TypedOperation> oneClassOperations =
             OperationExtractor.operations(
@@ -718,6 +729,10 @@ public class OperationModel {
                 omitMethodsPredicate,
                 accessibility,
                 operationSpecifications);
+        Log.logPrintf("addOperationsFromClasses: classType=%s%n", classType);
+        for (TypedOperation op : oneClassOperations) {
+          Log.logPrintf("    %s%n", op);
+        }
         operations.addAll(oneClassOperations);
       } catch (Throwable e) {
         // TODO: What is an example of this?  Should an error be raised, rather than this
@@ -764,7 +779,8 @@ public class OperationModel {
         }
       }
     } catch (IOException e) {
-      throw new RandoopUsageError("Problem reading file " + methodSignatures_file, e);
+      throw new RandoopUsageError(
+          "Problem reading file " + Util.pathAndAbsolute(methodSignatures_file), e);
     }
     return result;
   }

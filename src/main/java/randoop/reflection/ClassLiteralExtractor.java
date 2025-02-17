@@ -1,9 +1,8 @@
 package randoop.reflection;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import org.plumelib.util.CollectionsPlume;
 import randoop.operation.NonreceiverTerm;
 import randoop.operation.TypedOperation;
@@ -51,20 +50,15 @@ class ClassLiteralExtractor extends DefaultClassVisitor {
 
   @Override
   public void visitBefore(Class<?> c) {
-    Collection<ClassFileConstants.ConstantSet> constList =
-        Collections.singletonList(ClassFileConstants.getConstants(c.getName()));
-    MultiMap<Class<?>, NonreceiverTerm> constantMap = ClassFileConstants.toMap(constList);
-    for (Class<?> constantClass : constantMap.keySet()) {
-      ClassOrInterfaceType constantType = ClassOrInterfaceType.forClass(constantClass);
-      for (NonreceiverTerm term : constantMap.getValues(constantClass)) {
-        Sequence seq =
-            new Sequence()
-                .extend(
-                    TypedOperation.createNonreceiverInitialization(term),
-                    new ArrayList<Variable>(0));
-        literalMap.add(constantType, seq);
-        CollectionsPlume.incrementMap(literalsTermFrequency, seq, term.getFrequency());
-      }
+    ClassOrInterfaceType constantType = ClassOrInterfaceType.forClass(c);
+    Set<NonreceiverTerm> nonreceiverTerms = ClassFileConstants.getNonreceiverTerms(c);
+    for (NonreceiverTerm term : nonreceiverTerms) {
+      Sequence seq =
+          new Sequence()
+              .extend(
+                  TypedOperation.createNonreceiverInitialization(term), new ArrayList<Variable>(0));
+      literalMap.add(constantType, seq);
+      CollectionsPlume.incrementMap(literalsTermFrequency, seq, term.getFrequency());
     }
   }
 }

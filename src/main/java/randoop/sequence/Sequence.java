@@ -15,6 +15,7 @@ import org.plumelib.util.StringsPlume;
 import randoop.Globals;
 import randoop.main.GenInputsAbstract;
 import randoop.main.RandoopBug;
+import randoop.operation.MethodCall;
 import randoop.operation.OperationParseException;
 import randoop.operation.OperationParser;
 import randoop.operation.TypedOperation;
@@ -231,6 +232,22 @@ public final class Sequence {
   @Pure
   public final int size() {
     return statements.size();
+  }
+
+  /**
+   * The number of method calls in this sequence.
+   *
+   * @return the number of method calls in this sequence
+   */
+  public final int numMethodCalls() {
+    int result = 0;
+    for (int i = 0; i < statements.size(); i++) {
+      Statement statement = statements.get(i);
+      if (statement.getOperation().getOperation() instanceof MethodCall) {
+        result++;
+      }
+    }
+    return result;
   }
 
   /**
@@ -750,8 +767,13 @@ public final class Sequence {
     }
   }
 
-  // Argument checker for extend method.
-  // These checks should be caught by checkRep() too.
+  /**
+   * Argument checker for {@link #extend} method. These checks should be caught by {@link #checkRep}
+   * too.
+   *
+   * @param operation the operation to add
+   * @param inputVariables the input variables
+   */
   @SuppressWarnings("ReferenceEquality")
   private void checkInputs(TypedOperation operation, List<Variable> inputVariables) {
     if (operation.getInputTypes().size() != inputVariables.size()) {
@@ -890,7 +912,7 @@ public final class Sequence {
    * <p>The first VAR token represents the "output variable" that is the result of the statement
    * call. The VAR tokens appearing after OPERATION represent the "input variables" to the statement
    * call. At the i-th line, the input variable tokens should appear as an output variable for some
-   * previous j-th line, j &lt; i.
+   * previous j-th line, {@code j < i}.
    *
    * <p>Here is an example of a list of lines representing a sequence.
    *
@@ -1241,7 +1263,7 @@ public final class Sequence {
 
     RelativeNegativeIndex(int index) {
       if (index >= 0) {
-        throw new IllegalArgumentException("index should be non-positive: " + index);
+        throw new IllegalArgumentException("index should be negative: " + index);
       }
       this.index = index;
     }

@@ -20,7 +20,6 @@ import org.junit.Test;
 import org.plumelib.util.CollectionsPlume;
 import randoop.generation.ComponentManager;
 import randoop.generation.ForwardGenerator;
-import randoop.generation.RandoopListenerManager;
 import randoop.generation.SeedSequences;
 import randoop.generation.TestUtils;
 import randoop.main.ClassNameErrorHandler;
@@ -252,20 +251,19 @@ public class CoveredClassTest {
     MultiMap<Type, TypedClassOperation> sideEffectFreeMethodsByType =
         GenTests.readSideEffectFreeMethods();
 
+    // Get a set of all the values in the map.
     Set<TypedOperation> sideEffectFreeMethods = new LinkedHashSet<>();
     for (Type keyType : sideEffectFreeMethodsByType.keySet()) {
       sideEffectFreeMethods.addAll(sideEffectFreeMethodsByType.getValues(keyType));
     }
 
-    RandoopListenerManager listenerMgr = new RandoopListenerManager();
     ForwardGenerator testGenerator =
         new ForwardGenerator(
             model,
             sideEffectFreeMethods,
             new GenInputsAbstract.Limits(),
             componentMgr,
-            /*stopper=*/ null,
-            listenerMgr,
+            /* stopper= */ null,
             operationModel.getClassTypes().size(),
             operationModel.getLiteralTermFrequency(),
             operationModel.getClassTypes());

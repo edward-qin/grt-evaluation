@@ -14,7 +14,7 @@
 <h1>Randoop Manual</h1> <!-- omit from toc -->
 
 <p>
-This is the manual for Randoop version 4.3.2, released January 8, 2023.
+This is the manual for Randoop version 4.3.3, released May 2, 2024.
 The Randoop homepage is
 <a href="https://randoop.github.io/randoop/">https://randoop.github.io/randoop/</a>.
 </p>
@@ -94,7 +94,8 @@ The Randoop homepage is
           <li><a href="#flaky-tests">Randoop generated flaky tests</a></li>
           <li><a href="#regression-tests-do-not-pass">Randoop produces a regression test suite that does not pass</a></li>
           <li><a href="#dependent-tests">Tests behave differently in isolation or when reordered</a></li>
-          <li><a href="#sigsegv">A fatal error is detected by the Java Runtime</a></li>
+          <li><a href="#sigsegv">class has been compiled by a more recent version of the Java Runtime</a></li>
+          <li><a href="#fatal-error-java-runtime">A fatal error is detected by the Java Runtime</a></li>
         </ul></li>
       <li><a href="#bug-reporting">Reporting a bug to the issue tracker</a></li>
     </ul></li>
@@ -223,33 +224,33 @@ never modify Randoop tests by hand.
 <h1 id="getting_randoop">Installing Randoop</h1>
 
 <p>
-Randoop runs on a Java 8, Java 11, Java 17, or Java 19 JVM.
+Randoop runs on a Java 8 or later JVM.
 </p>
 
 <p>
   Download and unzip the file
-  <a href="https://github.com/randoop/randoop/releases/download/v4.3.2/randoop-4.3.2.zip"><code>randoop-4.3.2.zip</code></a>.
+  <a href="https://github.com/randoop/randoop/releases/download/v4.3.3/randoop-4.3.3.zip"><code>randoop-4.3.3.zip</code></a>.
 <!-- from the
   <a href="https://github.com/randoop/randoop/releases/latest">latest
     release</a>.
 -->
 <!--
   This zip archive contains the Randoop jar file
-  <code>randoop-all-4.3.2.jar</code>, the Java agent jar files
-  (<code>covered-class-4.3.2.jar</code> and
-   <code>replacecall-4.3.2.jar</code>),
+  <code>randoop-all-4.3.3.jar</code>, the Java agent jar files
+  (<code>covered-class-4.3.3.jar</code> and
+   <code>replacecall-4.3.3.jar</code>),
   and this documentation.
 -->
   This manual uses <code>${RANDOOP_PATH}</code> to refer to
   the path of the unzipped archive,
   and <code>${RANDOOP_JAR}</code> to refer to
-  the location of <code>randoop-all-4.3.2.jar</code>
+  the location of <code>randoop-all-4.3.3.jar</code>
   within the unzipped archive.
 </p>
 
 <p>
   Alternately, if you want to view or work with the <a href="https://github.com/randoop/randoop">source code</a>, follow the instructions in
-  the <a href="dev.html#">Getting Started</a>
+  the <a href="dev.html#starting">Getting Started</a>
   section of the Randoop Developer's Manual.
 </p>
 
@@ -311,10 +312,10 @@ as the separator.)
 </p>
 
 
-<!-- As of 12/29/2020, all commits are on April 29 and 30, 2018. -->
+<!-- As of June 2023, all commits are on April 29 and 30, 2018. -->
 <!-- https://github.com/5aab/randoop-maven-plugin -->
 
-<!-- As of 4/9/2019, this was last updated in May 2017. -->
+<!-- As of June 2023, this was last updated in May 2017. -->
 <!-- <h2 id="maven-plugin">Maven plugin</h2>
 
 <p>
@@ -325,7 +326,7 @@ for a program that uses the Maven build system.
 </p>
 -->
 
-<!-- As of 12/29/2020, last commit was in Dec 2012. -->
+<!-- As of June 2023, last commit was in Dec 2012. -->
 <!-- https://github.com/hascode/randoop-maven-plugin -->
 
 
@@ -415,7 +416,7 @@ RegressionTest will pass.
 </p>
 
 <pre class="code">
-java -cp .:junit.jar:<em>myclasspath</em>:.../randoop/build/libs/randoop-all-4.3.2.jar \
+java -cp .:junit.jar:<em>myclasspath</em>:.../randoop/build/libs/randoop-all-4.3.3.jar \
   randoop.main.Main minimize --suitepath=ErrorTest0.java --suiteclasspath=.:junit-4.12.jar:<em>myclasspath</em>
 </pre>
 
@@ -455,6 +456,8 @@ You may want to adjust the command-line arguments.  For example, you can
 pass a <code>.jar</code> file instead of a <code>.class</code> file.  Or,
 you could remove <code>-R</code> (and possibly run it twice to get depth-2
 instead of depth-1).
+You may want to remove <code>-apionly</code> if you wish to see all
+the Java runtime methods that are referenced.
 </p>
 
 <p>
@@ -519,6 +522,15 @@ methods that will appear in a test case.
     Be careful when choosing classes and methods to test.
   </li>
 </ul>
+
+<p>
+Note that you may include members of the Java runtime libraries in your list of
+classes to test.  Randoop will generate tests to exercise these methods.
+However, you cannot use Jacoco to check for coverage of JDK classes or methods,
+because the Jacoco coverage tool cannot collect any data from the Java runtime
+libraries.
+</p>
+
 
 <h2 id="classifying_tests">Classifying tests</h2>
 
@@ -837,10 +849,6 @@ Here is how Randoop attempts to generate a test:
     A custom <code>Stopper</code> was provided and indicates that
     generation should stop (see the Randoop code).
   </li>
-  <li>
-    A <code>RandoopListenerManager</code>'s <code>IEventListener</code> it
-    indicates that generation should stop (see the Randoop code).
-  </li>
 </ul>
 
 <p>
@@ -896,7 +904,7 @@ To minimize all failing tests in <code>ErrorTest1.java</code>, run
 Randoop as follows:
 </p>
 <pre class="code">
-java -cp randoop-all-4.3.2.jar randoop.main.Main minimize \
+java -cp randoop-all-4.3.3.jar randoop.main.Main minimize \
   --suitepath=ErrorTest0.java --suiteclasspath=junit.jar:commons-lang.jar --testsuitetimeout=30
 </pre>
 
@@ -1013,7 +1021,7 @@ Randoop about your application, and that is how we recommend using Randoop.
              File that contains fully-qualified field names to be excluded from test generation. An
  accessible field is used unless it is omitted by this or the <code>--omit-field</code> option.
             <li id="option:only-test-public-members"><b>--only-test-public-members=</b><i>boolean</i>.
-             Restrict tests to only include public members of classes.
+             Restrict tests to only call public members of classes.
 
  <p>When this is false, the setting of <code>--junit-package-name</code> and package accessibility is
  used to determine which members will be used in tests. [default: false]
@@ -1167,6 +1175,9 @@ Randoop about your application, and that is how we recommend using Randoop.
   <li><b>INVALID</b> Occurrence of exception indicates an invalid test.
 </ul>
 
+      </ul>
+  <li id="optiongroup:Specifications-for-methods-constructors">Specifications for methods/constructors
+      <ul>
             <li id="option:specifications"><b>--specifications=</b><i>filename</i> <code>[+]</code>.
              Read file of specifications; see manual section <a href="https://randoop.github.io/randoop/manual/index.html#specifying-behavior">"Specifying
  expected code behavior"</a>.
@@ -1184,7 +1195,7 @@ Randoop about your application, and that is how we recommend using Randoop.
   <li id="optiongroup:Side-effect-free-methods">Side-effect-free methods
       <ul>
             <li id="option:side-effect-free-methods"><b>--side-effect-free-methods=</b><i>filename</i>.
-             File containing side-effect-free methods, each given as a <a href="https://randoop.github.io/randoop/manual/#fully-qualified-signature">fully-qualified
+             File containing side-effect-free methods (also known as "pure methods"), each given as a <a href="https://randoop.github.io/randoop/manual/#fully-qualified-signature">fully-qualified
  signature</a> on a separate line. Specifying side-effect-free methods has two benefits: it
  makes regression tests stronger, and it helps Randoop create smaller tests.
       </ul>
@@ -1261,6 +1272,12 @@ Randoop about your application, and that is how we recommend using Randoop.
 <ul>
   <li><b>UNIFORM</b> Select methods randomly with uniform probability.
   <li><b>BLOODHOUND</b> The "Bloodhound" technique from the GRT paper prioritizes methods with lower branch coverage.
+ It weights each method under test based on the method's branch coverage and the number of
+ times the method is chosen for a new sequence. It requires the Jacoco code coverage tool; run
+ Randoop with <code>-Xbootclasspath/a:/path/to/jacocoagent.jar
+ -javaagent:/path/to/jacocoagent.jar</code>. Note that the Jacoco coverage tool cannot collect any
+ data from the Java runtime libraries, e.g., <code>java.lang</code>; thus they are not useful
+ candidates for the Bloodhound technique.
 </ul>
 
             <li id="option:string-maxlen"><b>--string-maxlen=</b><i>int</i>.
@@ -1281,6 +1298,7 @@ Randoop about your application, and that is how we recommend using Randoop.
              Randoop generates new tests by combining old previously-generated tests. This controls how the
  old tests are chosen, from among all existing tests. [default: UNIFORM]
 <ul>
+  <li><b>ORIENTEERING</b> Favor sequences with lower number of method calls and cumulative execution time.
   <li><b>SMALL_TESTS</b> Favor shorter sequences. This makes Randoop produce smaller JUnit tests.
   <li><b>UNIFORM</b> Select sequences uniformly at random.
   <li><b>CONSTANT_MINING</b> Sometimes, only use literal values that are extracted from classes under test. Otherwise
@@ -1306,7 +1324,8 @@ Randoop about your application, and that is how we recommend using Randoop.
             <li id="option:error-test-basename"><b>--error-test-basename=</b><i>string</i>.
              Base name (no ".java" suffix) of the JUnit file containing error-revealing tests [default: ErrorTest]
             <li id="option:regression-test-basename"><b>--regression-test-basename=</b><i>string</i>.
-             Base name (no ".java" suffix) of the JUnit file containing regression tests [default: RegressionTest]
+             Class name for the JUnit regression tests. Equivalently, the base name (no ".java" suffix) of
+ the JUnit file containing regression tests [default: RegressionTest]
             <li id="option:junit-package-name"><b>--junit-package-name=</b><i>string</i>.
              Name of the package for the generated JUnit files. Enables testing non-public members. Tests
  can be restricted to public members only by also using the option <code>
@@ -1366,27 +1385,33 @@ Randoop about your application, and that is how we recommend using Randoop.
  run Randoop multiple times with a different random seed, in order to produce multiple different
  test suites. [default: 0]
             <li id="option:deterministic"><b>--deterministic=</b><i>boolean</i>.
-             If true, Randoop is deterministic: running Randoop twice with the same arguments (including
- <code>--randomseed</code>) will produce the same test suite, so long as the program under test is
- deterministic. If false, Randoop may or may not produce the same test suite. To produce
- multiple different test suites, use the <code>--randomseed</code> command-line option. [default: false]
+             By default, Randoop is deterministic: running Randoop twice with the same arguments will
+ produce the same test suite, so long as the program under test is deterministic. (To produce
+ multiple different test suites, use the <code>--randomseed</code> command-line option.) However,
+ there are command-line arguments that make Randoop non-deterministic. Passing <code>
+ --deterministic</code> makes Randoop fail if one of the non-deterministic command-line arguments is
+ also passed; that is, passing <code>--deterministic</code> is a way to ensure you are not invoking
+ Randoop in a way that may lead to non-deterministic output. The <code>--deterministic</code> command
+ line argument doesn't itself do anything except check other command-line arguments. [default: false]
       </ul>
   <li id="optiongroup:Logging,-notifications,-and-troubleshooting-Randoop">Logging, notifications, and troubleshooting Randoop
       <ul>
             <li id="option:progressdisplay"><b>--progressdisplay=</b><i>boolean</i>.
              Run noisily: display information such as progress updates. [default: true]
             <li id="option:progressintervalmillis"><b>--progressintervalmillis=</b><i>long</i>.
-             Display progress message every &lt;int&gt; milliseconds. -1 means no display. [default: 60000]
+             Display a progress message every &lt;int&gt; milliseconds; -1 means no display. [default: 60000]
             <li id="option:progressintervalsteps"><b>--progressintervalsteps=</b><i>long</i>.
-             Display progress message every &lt;int&gt; attempts to create a test; -1 means none [default: 1000]
+             Display a progress message every &lt;int&gt; attempts to create a test; -1 means none. [default: 1000]
             <li id="option:debug-checks"><b>--debug-checks=</b><i>boolean</i>.
-             Perform expensive internal checks (for Randoop debugging) [default: false]
+             Perform expensive internal checks (for Randoop debugging). [default: false]
+            <li id="option:all-logs"><b>--all-logs=</b><i>boolean</i>.
+             Turns on all the logs. [default: false]
             <li id="option:log"><b>--log=</b><i>filename</i>.
              A file to which to log lots of information. If not specified, no logging is done. Enabling the
  logs slows down Randoop.
             <li id="option:selection-log"><b>--selection-log=</b><i>filename</i>.
-             A file to which to log selections; helps find sources of non-determinism. If not specified, no
- logging is done.
+             A file to which to log selections; helps find sources of non-determinism (randomness). If not
+ specified, no logging is done.
             <li id="option:operation-history-log"><b>--operation-history-log=</b><i>filename</i>.
              A file to which to write operation usage, when Randoop exits.
             <li id="option:print-non-compiling-file"><b>--print-non-compiling-file=</b><i>boolean</i>.
@@ -1423,6 +1448,9 @@ Randoop about your application, and that is how we recommend using Randoop.
  under test that results in an infinite loop or that waits for user input. The downside of this
  option is a BIG (order-of-magnitude) decrease in generation speed. The tests are not run in
  parallel, merely in isolation. [default: false]
+            <li id="option:timed-out-tests"><b>--timed-out-tests=</b><i>filename</i>.
+             If specified, Randoop logs timed-out tests to the specified file. Has no effect unless the
+ <code>--usethreads</code> command-line option is given.
             <li id="option:call-timeout"><b>--call-timeout=</b><i>int</i>.
              After this many milliseconds, a non-returning method call, and its associated test, are stopped
  forcefully. Only meaningful if <code>--usethreads</code> is also specified. [default: 5000]
@@ -1479,13 +1507,13 @@ To use it:
 <ul>
   <li>When running Randoop, pass the following command-line options to <code>java</code>:
 <pre>
--Xbootclasspath/a:${RANDOOP_PATH}/replacecall-4.3.2.jar -javaagent:${RANDOOP_PATH}/replacecall-4.3.2.jar
+-Xbootclasspath/a:${RANDOOP_PATH}/replacecall-4.3.3.jar -javaagent:${RANDOOP_PATH}/replacecall-4.3.3.jar
 </pre>
   </li>
-  <li>When running the generated tests, add the file <code>replacecall-4.3.2.jar</code> to the boot class path,
+  <li>When running the generated tests, add the file <code>replacecall-4.3.3.jar</code> to the boot class path,
     and pass the same command-line options to <code>java</code>:
 <pre>
--Xbootclasspath/a:${RANDOOP_PATH}/replacecall-4.3.2.jar -javaagent:${RANDOOP_PATH}/replacecall-4.3.2.jar
+-Xbootclasspath/a:${RANDOOP_PATH}/replacecall-4.3.3.jar -javaagent:${RANDOOP_PATH}/replacecall-4.3.3.jar
 </pre>
 </li>
 </ul>
@@ -1530,7 +1558,7 @@ org.something.library.
 and run the agent with the <code>--dont-transform=<em>filename</em></code> command-line option:
 </p>
 <pre>
--javaagent:${RANDOOP_PATH}/replacecall-4.3.2.jar=--dont-transform=replacecall-exclusions.txt
+-javaagent:${RANDOOP_PATH}/replacecall-4.3.3.jar=--dont-transform=replacecall-exclusions.txt
 </pre>
 
 <p>
@@ -1545,7 +1573,7 @@ For diagnostic output (such as to see what classes are being transformed),
 run the agent with the <code>--debug</code> flag
 </p>
 <pre>
--javaagent:${RANDOOP_PATH}/replacecall-4.3.2.jar=--debug
+-javaagent:${RANDOOP_PATH}/replacecall-4.3.3.jar=--debug
 </pre>
 
 
@@ -1569,7 +1597,7 @@ types (replace the first method by the second).
 Give the replacement file to the replacecall agent using the <code>--replacement-file</code> argument:
 </p>
 <pre>
--javaagent:${RANDOOP_PATH}/replacecall-4.3.2.jar=--replacement-file=replacecall-replacements.txt
+-javaagent:${RANDOOP_PATH}/replacecall-4.3.3.jar=--replacement-file=replacecall-replacements.txt
 </pre>
 
 <p>
@@ -1699,9 +1727,9 @@ throws-conditions (exceptional post-conditions):
   {
     "operation": <i>method-signature</i>,
     "identifiers": <i>formal-parameters</i>,
-    "pre-conditions": <i>pre-condition-list</i>,
-    "post-conditions": <i>normal-post-condition-list</i>,
-    "throws-conditions": <i>throws-condition-list</i>
+    "pre": <i>pre-condition-list</i>,
+    "post": <i>normal-post-condition-list</i>,
+    "throws": <i>throws-condition-list</i>
   }
 </code></pre>
 
@@ -2089,13 +2117,13 @@ exception escaping the method as the rep invariant being violated.
   option for java
 </p>
 <pre><code>
--javaagent:${RANDOOP_PATH}/covered-class-4.3.2.jar
+-javaagent:${RANDOOP_PATH}/covered-class-4.3.3.jar
 </code></pre>
 <p>
   This will instrument any non-abstract constructor and method of loaded
   classes so that the use of a class can be detected.
   The instrumentation is not done on any JDK or JUnit classes.
-  The <code>covered-class-4.3.2.jar</code> file can be found in the
+  The <code>covered-class-4.3.3.jar</code> file can be found in the
     unzipped distribution archive, or can be downloaded from the
     <a href="https://github.com/randoop/randoop/releases/latest">latest release</a>.
 </p>
@@ -2221,15 +2249,24 @@ the <a href="#option:randomseed"><code>--deterministic</code></a>
 command-line argument, then there is some source of nondeterminism.
 
 <p>
-If Randoop produces flaky tests and <a href="#option:flaky-test-behavior"><code>--flaky-test-behavior</code></a> is not set to HALT, Randoop will
-output a list of methods suspected to be the cause of nondeterminism in decreasing order 
-of likelihood.
-You should investigate these methods, fix nondeterministic ones or exclude them via <a href="#option:omit-methods"><code>--omit-methods</code></a>
+If Randoop produces flaky tests
+and <a href="#option:flaky-test-behavior"><code>--flaky-test-behavior</code></a>
+is not set to HALT, Randoop will output a list of methods suspected to be the
+cause of nondeterminism in decreasing order of likelihood.  You should
+investigate these methods, fix nondeterministic ones or exclude them
+via <a href="#option:omit-methods"><code>--omit-methods</code></a>
 or <a href="#option:omit-methods-file"><code>--omit-methods-file</code></a>
 command-line argument, and re-run Randoop until flaky tests are not generated.
-If you discover a nondeterministic method, let the Randoop maintainers know so
-we can include it in Randoop's default <code>omitmethods-defaults.txt</code>
-or <code>JDK-nondet-methods.txt</code>.
+</p>
+
+<p>
+If you discover a nondeterministic method, open an issue so the Randoop
+maintainers can include it in Randoop's
+default <code>omitmethods-defaults.txt</code>
+or <code>JDK-nondet-methods.txt</code>.  If Randoop suggests as flaky a method
+that you know is deterministic (for example, a JDK method), then open an issue
+so the Randoop maintainers can include it in the <code>nonFlakyMethods</code>
+list.
 </p>
 
 <p>
@@ -2481,7 +2518,8 @@ Cannot find the Java compiler. Check that classpath includes tools.jar
   You perhaps have the JRE on your path before the JDK.
   Ensure that <code>JAVA_HOME</code> appears at the <em>front</em> of your path.
   If you run the Windows operating system, see the
-  <a href="https://douglascayers.com/2015/05/30/how-to-set-custom-java-path-after-installing-jdk-8/">instructions for setting a custom Java path</a>.
+  <a href="https://web.archive.org/web/20230205080303/https://douglascayers.com/2015/05/30/how-to-set-custom-java-path-after-installing-jdk-8/">
+  instructions for setting a custom Java path</a>.
   Another possible cause of the problem is using an unsupported version of Java.
 </p>
 
@@ -2756,7 +2794,21 @@ tests</a>.
 </p>
 
 
-<h3 id="sigsegv">A fatal error is detected by the Java Runtime</h3>
+<h3 id="sigsegv">class has been compiled by a more recent version of the Java Runtime</h3>
+
+<p>
+The error:  <br/>
+Unexpected exception thrown by replacecall agent: org/plumelib/bcelutil/InstructionListUtils has been compiled by a more recent version of the Java Runtime (class file version 55.0), this version of the Java Runtime only recognizes class file versions up to 52.0<br/>
+says that Randoop was compiled by a Java 11 compiler (= class file version 55.0), but you are trying to run Randoop under a Java 8 runtime (= class file version 52.0).
+</p>
+
+<p>
+  If you are using a distributed version of Randoop, please open a bug report.
+  If you copmiled Randoop yourself, then need to recompile Randoop.
+</p>
+
+
+<h3 id="fatal-error-java-runtime">A fatal error is detected by the Java Runtime</h3>
 
 <p>
   If the command to run Randoop has output similar to
@@ -2830,12 +2882,14 @@ potential ways to work around this problem:
   a screenshot in order to reproduce.
 </p>
 
+<!--
 <p>
   If you encountered the problem while using the Maven plug-in
   or running a command within an IDE,
   then please reproduce the problem from the command line, to help the
   Randoop developers find the underlying bug (or to isolate the problem to the plug-in or IDE configuration).
 </p>
+-->
 
 
 <h1 id="credits">Credits</h1>

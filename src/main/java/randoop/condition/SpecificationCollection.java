@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -36,12 +37,19 @@ import randoop.compile.SequenceCompiler;
 import randoop.condition.specification.OperationSignature;
 import randoop.condition.specification.OperationSpecification;
 import randoop.main.RandoopBug;
+import randoop.operation.TypedOperation;
 import randoop.reflection.TypeNames;
 import randoop.util.MultiMap;
+import randoop.util.Util;
 
 /**
  * A collection of {@link OperationSpecification} objects, indexed by {@link AccessibleObject}
  * reflection objects. Only represents methods that have a specification.
+ *
+ * <p>This represents a file given on the command line via {@code --specifications}. Its purpose is
+ * only to hold specifications temporarily, so the specification can be stored in the operation (via
+ * {@link TypedOperation#setExecutableSpecification}). Once all operations have been created (and
+ * specifications stored in them), the SpecificationCollection is discarded.
  *
  * <p>The {@link SpecificationCollection} should be constructed from the specification input before
  * the {@link randoop.reflection.OperationModel} is created.
@@ -57,7 +65,8 @@ import randoop.util.MultiMap;
 
   /**
    * Given a method signature, what methods (that have specifications) have that signature? Does not
-   * contain constructors.
+   * contain constructors. This map is used to determine overriding relationships in {@code
+   * overridden}.
    */
   private final MultiMap<OperationSignature, Method> signatureToMethods;
 
@@ -251,7 +260,7 @@ import randoop.util.MultiMap;
       Path specificationFile,
       Map<AccessibleObject, OperationSpecification> specificationMap,
       MultiMap<OperationSignature, Method> signatureToMethods) {
-    if (specificationFile.toString().toLowerCase().endsWith(".zip")) {
+    if (specificationFile.toString().toLowerCase(Locale.getDefault()).endsWith(".zip")) {
       readSpecificationZipFile(specificationFile, specificationMap, signatureToMethods);
       return;
     }
@@ -283,7 +292,7 @@ import randoop.util.MultiMap;
       }
     } catch (IOException e) {
       throw new RandoopSpecificationError(
-          "Unable to read specification file " + specificationFile, e);
+          "Unable to read specification file " + Util.pathAndAbsolute(specificationFile), e);
     } catch (RandoopSpecificationError e) {
       e.setFile(specificationFile);
       throw e;
@@ -336,7 +345,7 @@ import randoop.util.MultiMap;
       }
     } catch (IOException e) {
       throw new RandoopSpecificationError(
-          "Unable to read specification file " + specificationZipFile, e);
+          "Unable to read specification file " + Util.pathAndAbsolute(specificationZipFile), e);
     }
   }
 

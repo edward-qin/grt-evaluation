@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.plumelib.util.CollectionsPlume;
 import randoop.main.GenInputsAbstract;
 import randoop.main.RandoopBug;
@@ -26,9 +27,9 @@ import randoop.util.Randomness;
 import randoop.util.SimpleList;
 
 /**
- * Stores and provides means to access the component sequences generated during a run of Randoop.
- * "Component sequences" are sequences that Randoop uses to create larger sequences. The collection
- * of sequences is also called Randoop's "pool".
+ * Stores the component sequences generated during a run of Randoop. "Component sequences" are
+ * sequences that Randoop uses to create larger sequences. The collection of sequences is also
+ * called Randoop's "pool".
  *
  * <p>This class manages different collections of component sequences:
  *
@@ -39,29 +40,33 @@ import randoop.util.SimpleList;
  *   <li>Package literals: analogous to class literals but at the package level.
  * </ul>
  *
- * <p>SEED SEQUENCES. Seed sequences are sequences that were not created during the generation
- * process but obtained via other means. They include (1) sequences passed via the constructor, (2)
- * class literals, and (3) package literals. The only different treatment of seed sequences is
- * during calls to the clearGeneratedSequences() method, which removes only general, non-seed
- * components from the collection.
+ * <p>SEED SEQUENCES. Seed sequences are the initial sequences provided to the generation process.
+ * They include (1) sequences passed via the constructor, (2) class literals, and (3) package
+ * literals. The only different treatment of seed sequences is during calls to the
+ * clearGeneratedSequences() method, which removes only general, non-seed components from the
+ * collection.
  */
 public class ComponentManager {
-  /** The principal set of sequences used to create other, larger sequences by the generator. */
-  // Is never null. Contains both general components and seed sequences.
+
+  /**
+   * The principal set of sequences used to create other, larger sequences by the generator. Is
+   * never null. Contains both general components and seed sequences. Can be reset by calling {@link
+   * #clearGeneratedSequences}.
+   */
   // "gral" probably stands for "general".
   private SequenceCollection gralComponents;
 
   /**
-   * The subset of the sequences that were given pre-generation to the component manager (via its
-   * constructor).
+   * The sequences that were given pre-generation to the component manager (via its constructor).
+   * (Does not include literals, I think?)
+   *
+   * <p>Seeds are all contained in {@link #gralComponents}. This list is kept to restore seeds if
+   * the user calls {@link #clearGeneratedSequences}.
    */
-  // Seeds are all contained in gralComponents. This list is kept to restore seeds if the user calls
-  // clearGeneratedSequences().
   private final Collection<Sequence> gralSeeds;
 
   /**
-   * A set of additional components representing literals that should only be used as input to
-   * specific classes.
+   * Components representing literals that should only be used as input to specific classes.
    *
    * <p>Null if class literals are not used or none were found. At most one of classLiterals and
    * packageliterals is non-null.
@@ -75,7 +80,7 @@ public class ComponentManager {
    * <p>Null if package literals are not used or none were found. At most one of classLiterals and
    * packageliterals is non-null.
    */
-  private PackageLiterals packageLiterals = null;
+  private @Nullable PackageLiterals packageLiterals = null;
 
   /**
    * Document frequency: map of literal the number of classes that it appears in. The keys are
