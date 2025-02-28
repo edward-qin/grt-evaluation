@@ -82,7 +82,7 @@ fi
 type=f
 
 # Test suite source and number
-suite_src=randoop
+suite_src=randoopInputFuzzing
 suite_num=1
 expected_test_count=0
 
@@ -102,7 +102,8 @@ for pid in "${projects[@]}"; do
         ((expected_test_count++))
 
         # Run Randoop
-        gen_tests.pl -g randoop -p $pid -v $vid -n 1 -o $randoop_dir -b 100 || die "run Randoop on $pid-$vid"
+        gen_tests.pl -g randoopInputFuzzing -p $pid -v $vid -n 1 -o $randoop_dir -b 100 || die "run Randoop on
+        $pid-$vid"
     done
 
     suite_dir=$randoop_dir/$pid/$suite_src/$suite_num
