@@ -16,6 +16,9 @@ The main repositories used to evaluate GRT are as follows:
 * [Defects4j](https://github.com/edward-qin/defects4j-grt): A fork of Defects4j, a dataset of known defects found in real open-source programs used in defect
   detection from the original GRT paper
 
+Note that to contribute to this repository, on some platforms, you need to setup `html5validator` and modify `build.
+gradle` to actually run the command from the source path.
+
 ### Coverage and Mutation Score Setup
 
 1. Clone the repository
@@ -45,8 +48,10 @@ git clone git@github.com:edward-qin/defects4j-grt.git
 cd defects4j-grt
 ```
 2. Follow the steps to setup [Defects4j](https://github.com/edward-qin/defects4j-grt?tab=readme-ov-file#steps-to-set-up-defects4j)
-3. TODO: some other script steps here
-   * You can alternatively setup using `grt-evaluation/scripts/defects4j_README.md`
+3. Setup using `grt-evaluation/scripts/defects4j_README.md`
+   * Skip steps 3-5 (no need to run the scripts from this repository)
+4. Run `defects4j-grt/framework/test/test_run_tests.sh -p [Math|Lang|Chart|Time] -t [120|300|600]`
+   * Output results will live in the `/tmp` directory
 
 ## Learn about Randoop:
 
