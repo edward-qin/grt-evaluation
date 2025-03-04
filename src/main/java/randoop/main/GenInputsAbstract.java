@@ -738,6 +738,7 @@ public abstract class GenInputsAbstract extends CommandHandler {
   @Option("Log information about demand-driven input creation")
   public static FileWriterWithName demand_driven_log = null;
 
+  /**
    * The "Elephant Brain" feature from the GRT paper manages method sequences (to create inputs) in
    * {@link randoop.sequence.SequenceCollection} using the exact types obtained at runtime. When
    * generating test cases, "Elephant Brain" compares the static type of each method return value
