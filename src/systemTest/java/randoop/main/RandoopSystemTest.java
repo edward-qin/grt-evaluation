@@ -1949,6 +1949,31 @@ public class RandoopSystemTest {
         testEnvironment, options, ExpectedTests.SOME, ExpectedTests.NONE, coverageChecker);
   }
 
+  @Test
+  public void runElephantBrainTest() {
+    SystemTestEnvironment testEnvironment =
+        systemTestEnvironmentManager.createTestEnvironment("elephant-brain-test");
+    RandoopOptions options = createRandoopOptions(testEnvironment);
+    options.addTestClass("misc.elephantbrain.ElephantBrainTest");
+    options.addTestClass("misc.elephantbrain.GrandParent");
+    options.addTestClass("misc.elephantbrain.Parent");
+    options.addTestClass("misc.elephantbrain.ChildA");
+    options.addTestClass("misc.elephantbrain.ChildB");
+    options.setOption("cast_to_run_time_type", "true");
+    options.setOption("output_limit", "50");
+    options.setOption("generated_limit", "100");
+
+    CoverageChecker coverageChecker =
+        new CoverageChecker(
+            options,
+            "misc.elephantbrain.ElephantBrainTest.testA() include",
+            "misc.elephantbrain.ElephantBrainTest.testB() include",
+            "misc.elephantbrain.ElephantBrainTest.testP() exclude",
+            "misc.elephantbrain.GrandParent.toString() ignore");
+    generateAndTest(
+        testEnvironment, options, ExpectedTests.SOME, ExpectedTests.NONE, coverageChecker);
+  }
+
   /** Test Nonnull methods */
   @Test
   public void NonNullCollectionTest() {
@@ -1957,6 +1982,20 @@ public class RandoopSystemTest {
     RandoopOptions options = createRandoopOptions(testEnvironment);
     options.addTestClass("collections.NonNullCollection");
     options.setOption("output_limit", "20");
+    generateAndTest(testEnvironment, options, ExpectedTests.SOME, ExpectedTests.NONE);
+  }
+
+  // Test randoop.generation.DemandDrivenInputCreation
+  @Test
+  public void runDemandDrivenTest() {
+    SystemTestEnvironment testEnvironment =
+        systemTestEnvironmentManager.createTestEnvironment("demand-driven-test");
+    RandoopOptions options = createRandoopOptions(testEnvironment);
+    options.addTestClass("randoop.test.A");
+    options.setOption("demand_driven", "true");
+    options.setOption("output_limit", "100");
+    options.setOption("generated_limit", "200");
+
     generateAndTest(testEnvironment, options, ExpectedTests.SOME, ExpectedTests.NONE);
   }
 
