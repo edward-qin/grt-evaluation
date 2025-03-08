@@ -8,7 +8,7 @@ detection (via Defects4j) evaluation results from the paper.
 ## Setup
 
 The main repositories used to evaluate GRT are as follows:
-* [This repository](https://github.com/edward-qin/grt-evaluation): A fork of Randoop (with flags to enable GRT
+* [This repository](https://github.com/edward-qin/randoop-grt): A fork of Randoop (with flags to enable GRT
   techniques)
 * [Coverage and Mutation Score](https://github.com/randoop/grt-testing/tree/776styjsu-diff-patch):
   Evaluation of code
@@ -33,7 +33,7 @@ cd grt-testing
    * Instead of cloning the `randoop` repository and then removing it, you can instead copy from this fork of randoop.
 ```bash
 usejdk11
-cd <path_to_root_of_grt-evaluation>
+cd <path_to_root_of_randoop-grt>
 ./gradlew shadowJar
 mv -f build/libs/randoop-all-4.3.3.jar agent/replacecall/build/libs/replacecall-4.3.3.jar
 <path_to_grt-testing>/scripts/build
@@ -48,7 +48,7 @@ git clone git@github.com:edward-qin/defects4j-grt.git
 cd defects4j-grt
 ```
 2. Follow the steps to setup [Defects4j](https://github.com/edward-qin/defects4j-grt?tab=readme-ov-file#steps-to-set-up-defects4j)
-3. Setup using `grt-evaluation/scripts/defects4j_README.md`
+3. Setup using `randoop-grt/scripts/defects4j_README.md` from [here](https://github.com/edward-qin/randoop-grt/blob/master/scripts/defects4j_README.md)
    * Skip steps 3-5 (no need to run the scripts from this repository)
 4. Run `defects4j-grt/framework/test/test_run_tests.sh -p [Math|Lang|Chart|Time] -t [120|300|600]`
    * Output results will live in the `/tmp` directory
