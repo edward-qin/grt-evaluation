@@ -13,12 +13,10 @@
 # Must use Java version 8.
 JAVA_VERSION_STRING=`java -version 2>&1 | head -1`
 JAVA_RELEASE_NUMBER=`echo $JAVA_VERSION_STRING | sed 's/^.*1\.\(.\).*/\1/'`
-
-## NOTE: Java is backwards-compatible; the version number should just be >= 8
-#if [[ "$JAVA_RELEASE_NUMBER" != "8" ]]; then
-# echo Must use Java version 8
+if [[ "$JAVA_RELEASE_NUMBER" != "8" ]]; then
+ echo Must use Java version 8
 # exit
-#fi
+fi
 
 # Import helper subroutines and variables
 if [ ! -f test.include ]; then
@@ -84,7 +82,7 @@ fi
 type=f
 
 # Test suite source and number
-suite_src=randoop
+suite_src=randoopGRT
 suite_num=1
 expected_test_count=0
 
@@ -104,7 +102,7 @@ for pid in "${projects[@]}"; do
         ((expected_test_count++))
 
         # Run Randoop
-        gen_tests.pl -g randoop -p $pid -v $vid -n 1 -o $randoop_dir -b 120 || die "run Randoop on $pid-$vid"
+        gen_tests.pl -g randoopGRT -p $pid -v $vid -n 1 -o $randoop_dir -b 100 || die "run Randoop on $pid-$vid"
     done
 
     suite_dir=$randoop_dir/$pid/$suite_src/$suite_num
